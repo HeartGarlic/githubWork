@@ -1,0 +1,69 @@
+version: "3.3"
+
+services:
+  mysql:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tao
+      MYSQL_USER: tao
+      MYSQL_PASSWORD: tao
+    volumes:
+      - "./mysql/data:/var/lib/mysql"
+      - "./mysql/my.conf:/etc/my.cnf"
+    networks:
+      - code-network
+
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - 6379:6379
+    networks:
+      - code-network
+
+  mongo:
+    image: mongo
+    restart: always
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    networks:
+      - code-network
+
+  nginx:
+    restart: always
+    image: nginx
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - "./nginx/nginx.conf:/etc/nginx/nginx.conf"
+      - "./nginx/logs:/var/log/nginx"
+      - "./nginx/www:/var/www/html"
+    networks:
+      - code-network
+      # 依赖关系 先跑php
+    depends_on:
+      - "php71-fpm"
+
+  php71-fpm:
+    build: ./php71-fpm
+    image: php:7.1-fpm-pdo-mysql
+    restart: always
+    ports:
+      - 9000:9000
+    volumes:
+      - "./nginx/www:/var/www/html"
+    networks:
+      - code-network
+
+networks:
+  code-network:
+    driver: bridge
